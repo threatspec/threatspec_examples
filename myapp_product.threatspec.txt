@@ -1,0 +1,59 @@
+
+# Components
+
+## External
+@component External:User (#user)
+
+## Network 
+@component MyApp:Web:LoadBalancer (#lb)
+@component MyApp:Web:WebServer (#web)
+@component MyApp:Web:AppServer (#app)
+@component MyApp:Web:DataCache (#cache)
+@component MyApp:Web:Database (#db)
+
+## Dataflow
+@component MyApp:Auth:Login (#login)
+@component MyApp:Auth:PasswordReset (#password)
+@component MyApp:Product:Search (#product_search)
+@component MyApp:Product:Basket (#product_basket)
+@component MyApp:Product:Payment (#product_payment)
+
+
+# Connections
+
+## Network
+@connect #user to #lb with HTTPS on 443
+@connect #lb to #web with HTTPS on 8443
+@connect #web to #app with HTTPS on 8443
+@connect #app to #cache with TCP/6379
+@connect #app to #db with TCP/3306
+
+## Dataflow
+@connect #user to #login with submits credentials
+@connect #login to #user with auth session token on success
+
+@connect #user to #product_search with search by keyword
+@connect #product_search to #user with list of matching products
+
+@connect #user to #product_basket with adds desired products to basket
+@connect #user to #product_payment with payment of products in basket
+@connect #product_payment to #user with payment summary shown on success
+
+
+# Threat Library
+
+@threat SQL Injection (#sql):
+  description: An attacker can inject malicious SQL statements, typically through web form components, and make changes or retrieve information from the backend database.
+
+@threat Man In The Middle (#mitm):
+  description: An attacker can intercept unsecured traffic and can obtain sensitive information or tamper with the connection.
+
+@threat Authentication token theft (#token_theft):
+  description: An attacker can steal or otherwise obtain a sensitive authentication token and can therefore spoof the legitimate user
+
+# Threats
+
+@exposes #app to #sql with possible lack of input validation and sanitization
+@exposes #cache to #mitm with lack of encryption
+@exposes #db to #mitm with lack of encryption
+@transfers #token_theft from #login to #user with user must secure and protect auth token
